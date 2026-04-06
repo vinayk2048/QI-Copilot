@@ -1,5 +1,5 @@
 import React from 'react'
-import { FiDownload, FiGrid, FiShare2, FiBookmark, FiSave } from 'react-icons/fi'
+import { FiDownload, FiGrid, FiShare2, FiBookmark, FiSave, FiCloud } from 'react-icons/fi'
 
 export default function FooterActions({ onExport, onExportExcel, onTestRepository }) {
   return (
@@ -17,6 +17,10 @@ export default function FooterActions({ onExport, onExportExcel, onTestRepositor
         <button className="btn-outline">
           <FiShare2 className="text-sm" />
           Jira
+        </button>
+        <button className="btn-outline">
+          <FiCloud className="text-sm" />
+          Azure DevOps
         </button>
         <button className="btn-outline">
           <FiBookmark className="text-sm" />
