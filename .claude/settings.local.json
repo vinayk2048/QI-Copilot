@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx vite:*)",
+      "Bash(printf \"protocol=https\\\\nhost=github.com\\\\n\")",
+      "Bash(\"C:/Program Files/Git/mingw64/bin/git-credential-manager.exe\" erase)",
+      "Bash(\"C:/Program Files/Git/mingw64/bin/git-credential-manager.exe\" github list)",
+      "Bash(printf \"protocol=https\\\\nhost=github.com\\\\nusername=k-Anusha515\\\\n\")",
+      "Bash(git config:*)",
+      "Bash(xargs wc:*)"
+    ]
+  }
+}
