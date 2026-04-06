@@ -1,44 +1,60 @@
 import React, { useState, useRef } from 'react'
 import { FiUpload, FiSearch, FiFilter, FiZap, FiRefreshCw } from 'react-icons/fi'
-import { RiRobot2Line } from 'react-icons/ri'
 import toast from 'react-hot-toast'
+import * as XLSX from 'xlsx'
 import ConfidenceScore from '../components/ConfidenceScore'
 import TestCaseTable from '../components/TestCaseTable'
 import FooterActions from '../components/FooterActions'
-import { generateTestCases, uploadRequirements, MOCK_TEST_CASES } from '../services/api'
+import { generateTestCases, uploadRequirements } from '../services/api'
 
 function parseTestCasesFromText(text) {
   // Parse the LLM raw text into structured test case objects
+  // Splits on lines containing a Test Case ID pattern (e.g. CC-001, TC_002, TC001)
   const cases = []
-  const blocks = text.split(/(?=(?:TC[-_]?\d+|Test Case (?:ID:?\s*)?(?:TC[-_]?\d+|\d+)))/gi)
+  const blocks = text.split(/(?=\*{0,2}Test Case ID\*{0,2}\s*[:：]\s*)/i)
 
   for (const block of blocks) {
     if (!block.trim()) continue
 
-    const idMatch = block.match(/(?:TC[-_]?\d+|\bTest Case (?:ID:?\s*)?(\d+))/i)
+    // Match ID like CC-001, TC_002, TC001, LOGIN-001 etc.
+    const idMatch = block.match(/\*{0,2}Test Case ID\*{0,2}\s*[:：]\s*\*{0,2}\s*([A-Z0-9][-A-Z0-9_]*\d+)/i)
     if (!idMatch) continue
+    const id = idMatch[1].trim()
 
-    const id = idMatch[0].replace(/Test Case (?:ID:?\s*)?/i, 'TC').replace(/[_\s]/g, '')
+    // Match Title (may be wrapped in ** markdown bold)
+    const titleMatch = block.match(/\*{0,2}(?:Title|Scenario|Description)\*{0,2}\s*[:：]\s*\*{0,2}\s*(.+)/i)
+    const scenario = titleMatch
+      ? titleMatch[1].replace(/\*+/g, '').trim()
+      : 'Test scenario'
 
-    const titleMatch = block.match(/(?:Title|Scenario)[:\s]*(.+)/i)
-    const scenario = titleMatch ? titleMatch[1].trim() : block.split('\n').find(l => l.trim() && !l.match(/^TC/i))?.trim() || 'Test scenario'
-
-    const stepsMatch = block.match(/(?:Test Steps|Steps)[:\s]*([\s\S]*?)(?=Expected|Priority|$)/i)
+    // Match Test Steps — grab everything between "Test Steps:" and the next field
+    const stepsMatch = block.match(/\*{0,2}(?:Test Steps|Steps)\*{0,2}\s*[:：]\s*([\s\S]*?)(?=\s*[-*]*\s*\*{0,2}(?:Expected|Precondition|Priority|\*{0,2}Test Case ID)|$)/i)
     let steps = ['1. Execute test']
     if (stepsMatch) {
-      steps = stepsMatch[1]
+      const parsed = stepsMatch[1]
         .split('\n')
         .map(s => s.trim())
-        .filter(s => s && s.match(/^\d|^-|^Step/i))
-        .map((s, i) => s.match(/^\d/) ? s : `${i + 1}. ${s.replace(/^-\s*/, '')}`)
+        .filter(s => s && /^\d+[.)]\s|^[-•]\s|^Step\s/i.test(s))
+        .map((s, i) => {
+          // Normalize to "N. text" format
+          const cleaned = s.replace(/^\d+[.)]\s*/, '').replace(/^[-•]\s*/, '').replace(/^Step\s+\d+[.:)]\s*/i, '')
+          return `${i + 1}. ${cleaned}`
+        })
+      if (parsed.length > 0) steps = parsed
     }
-    if (steps.length === 0) steps = ['1. Execute test']
 
-    const expectedMatch = block.match(/Expected\s*(?:Result|Output)[:\s]*(.+)/i)
-    const expectedResult = expectedMatch ? expectedMatch[1].trim() : 'Test passes successfully'
+    // Match Expected Result (may span the rest of the line, possibly with markdown bold)
+    const expectedMatch = block.match(/\*{0,2}Expected\s*(?:Result|Output|Outcome)\*{0,2}\s*[:：]\s*\*{0,2}\s*(.+)/i)
+    const expectedResult = expectedMatch
+      ? expectedMatch[1].replace(/\*+/g, '').trim()
+      : 'Test passes successfully'
 
+    // Match Priority if present, otherwise cycle
+    const priorityMatch = block.match(/\*{0,2}Priority\*{0,2}\s*[:：]\s*\*{0,2}\s*(High|Medium|Low)/i)
     const priorities = ['High', 'Medium', 'Low']
-    const priority = priorities[cases.length % 3]
+    const priority = priorityMatch
+      ? priorityMatch[1].charAt(0).toUpperCase() + priorityMatch[1].slice(1).toLowerCase()
+      : priorities[cases.length % 3]
 
     cases.push({ id, scenario, steps, expectedResult, priority })
   }
@@ -73,17 +89,14 @@ export default function TestCaseGenerator({ onTestCasesGenerated }) {
       if (parsed) {
         setTestCases(parsed)
       } else {
-        setTestCases(MOCK_TEST_CASES)
+        toast.error('Could not parse test cases from the response')
       }
       onTestCasesGenerated?.(raw)
       toast.success('Test cases generated successfully!')
     } catch (err) {
-      console.error('API call failed, using mock data:', err)
-      setTestCases(MOCK_TEST_CASES)
-      setRawTestCases('Mock test cases (backend unavailable)')
-      setConfidence(82)
-      onTestCasesGenerated?.('Mock test cases')
-      toast.success('Test cases loaded (demo mode)')
+      console.error('Test case generation failed:', err)
+      const message = err.response?.data?.detail || err.message || 'Failed to generate test cases'
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -106,6 +119,43 @@ export default function TestCaseGenerator({ onTestCasesGenerated }) {
       }
       reader.readAsText(file)
     }
+  }
+
+  const handleExport = () => {
+    if (testCases.length === 0) {
+      toast.error('No test cases to export')
+      return
+    }
+    const content = testCases.map(tc =>
+      `${tc.id}: ${tc.scenario}\nSteps:\n${tc.steps.join('\n')}\nExpected Result: ${tc.expectedResult}\nPriority: ${tc.priority}\n`
+    ).join('\n---\n\n')
+    const blob = new Blob([content], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'test_cases.txt'
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Test cases exported')
+  }
+
+  const handleExportExcel = () => {
+    if (testCases.length === 0) {
+      toast.error('No test cases to export')
+      return
+    }
+    const rows = testCases.map(tc => ({
+      'Test Case ID': tc.id,
+      'Scenario': tc.scenario,
+      'Steps': tc.steps.join('\n'),
+      'Expected Result': tc.expectedResult,
+      'Priority': tc.priority,
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Test Cases')
+    XLSX.writeFile(wb, 'test_cases.xlsx')
+    toast.success('Test cases exported to Excel')
   }
 
   const filteredCases = testCases.filter(
@@ -246,7 +296,11 @@ export default function TestCaseGenerator({ onTestCasesGenerated }) {
         </div>
 
         {/* Footer */}
-        <FooterActions onTestRepository={() => toast('Test Repository opened')} />
+        <FooterActions
+          onExport={handleExport}
+          onExportExcel={handleExportExcel}
+          onTestRepository={() => toast('Test Repository opened')}
+        />
       </div>
     </div>
   )
