@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react'
-import { FiPlay, FiEye, FiEdit2, FiRefreshCw, FiUpload } from 'react-icons/fi'
+import { FiPlay, FiRefreshCw, FiUpload } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import * as XLSX from 'xlsx'
 import CodeEditor from '../components/CodeEditor'
 import FooterActions from '../components/FooterActions'
-import { generateScript, MOCK_SCRIPT } from '../services/api'
+import { generateScript } from '../services/api'
 
 export default function ScriptGenerator({ generatedTestCases }) {
   const [scriptSource, setScriptSource] = useState('generated')
@@ -13,7 +14,7 @@ export default function ScriptGenerator({ generatedTestCases }) {
   const [language, setLanguage] = useState('Java')
   const [generatedScript, setGeneratedScript] = useState('')
   const [loading, setLoading] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
+  const [error, setError] = useState('')
   const fileInputRef = useRef(null)
 
   const frameworks = [
@@ -39,14 +40,16 @@ export default function ScriptGenerator({ generatedTestCases }) {
     }
 
     setLoading(true)
+    setError('')
     try {
       const data = await generateScript(testCases, framework, language)
       setGeneratedScript(data.script)
       toast.success('Script generated successfully!')
     } catch (err) {
-      console.error('API call failed, using mock data:', err)
-      setGeneratedScript(MOCK_SCRIPT)
-      toast.success('Script loaded (demo mode)')
+      console.error('Script generation failed:', err)
+      const message = err.response?.data?.detail || err.message || 'Failed to generate script'
+      setError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -63,20 +66,61 @@ export default function ScriptGenerator({ generatedTestCases }) {
     reader.readAsText(file)
   }
 
-  const handlePreview = () => {
-    if (!generatedScript) {
-      toast.error('Generate a script first')
-      return
+  const handleLanguageChange = async (newLanguage) => {
+    setLanguage(newLanguage)
+    if (!generatedScript) return
+
+    const testCases = getTestCasesForGeneration()
+    if (!testCases.trim()) return
+
+    setLoading(true)
+    setError('')
+    try {
+      const data = await generateScript(testCases, framework, newLanguage)
+      setGeneratedScript(data.script)
+      toast.success(`Script regenerated in ${newLanguage}`)
+    } catch (err) {
+      console.error('Language switch regeneration failed:', err)
+      const message = err.response?.data?.detail || err.message || 'Failed to regenerate script'
+      setError(message)
+      toast.error(message)
+    } finally {
+      setLoading(false)
     }
-    setIsEditing(false)
   }
 
-  const handleEdit = () => {
+  const getFileExtension = () => {
+    const extMap = { Python: 'py', Java: 'java', JavaScript: 'js' }
+    return extMap[language] || 'txt'
+  }
+
+  const handleExport = () => {
     if (!generatedScript) {
-      toast.error('Generate a script first')
+      toast.error('No script to export')
       return
     }
-    setIsEditing(true)
+    const blob = new Blob([generatedScript], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `generated_script.${getFileExtension()}`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Script exported')
+  }
+
+  const handleExportExcel = () => {
+    if (!generatedScript) {
+      toast.error('No script to export')
+      return
+    }
+    const lines = generatedScript.split('\n')
+    const rows = lines.map((line, i) => ({ 'Line': i + 1, 'Code': line }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Script')
+    XLSX.writeFile(wb, `generated_script.xlsx`)
+    toast.success('Script exported to Excel')
   }
 
   return (
@@ -190,24 +234,39 @@ export default function ScriptGenerator({ generatedTestCases }) {
 
             {/* Framework Selection */}
             <div>
-              <label className="text-sm font-medium text-gray-600 mb-2 block">
+              <label className="text-sm font-medium text-gray-600 mb-1.5 block">
                 Framework:
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <select
+                value={framework}
+                onChange={(e) => setFramework(e.target.value)}
+                className="input-field"
+              >
                 {frameworks.map((fw) => (
-                  <button
-                    key={fw.id}
-                    onClick={() => setFramework(fw.id)}
-                    className={`py-2 px-3 rounded-lg text-sm font-medium transition-all border ${
-                      framework === fw.id
-                        ? 'bg-[#4a6fa5] text-white border-[#4a6fa5] shadow-sm'
-                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
+                  <option key={fw.id} value={fw.id}>
                     {fw.label}
-                  </button>
+                  </option>
                 ))}
-              </div>
+              </select>
+            </div>
+
+            {/* Language Selection */}
+            <div>
+              <label className="text-sm font-medium text-gray-600 mb-1.5 block">
+                Language:
+              </label>
+              <select
+                value={language}
+                onChange={(e) => handleLanguageChange(e.target.value)}
+                disabled={loading}
+                className="input-field"
+              >
+                {languages.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -235,16 +294,9 @@ export default function ScriptGenerator({ generatedTestCases }) {
                 </>
               )}
             </button>
-            <div className="flex gap-2">
-              <button onClick={handlePreview} className="btn-secondary flex-1 justify-center text-sm">
-                <FiEye />
-                Preview Script
-              </button>
-              <button onClick={handleEdit} className="btn-secondary flex-1 justify-center text-sm">
-                <FiEdit2 />
-                Edit Script
-              </button>
-            </div>
+            {error && (
+              <p className="text-xs text-red-600 mt-1">{error}</p>
+            )}
           </div>
         </div>
       </div>
@@ -253,30 +305,21 @@ export default function ScriptGenerator({ generatedTestCases }) {
       <div className="flex-1 panel-card flex flex-col min-h-0">
         <div className="panel-header">
           <h2>Output Panel</h2>
-          <div className="flex items-center gap-2">
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="text-sm bg-white/90 text-gray-800 rounded-md px-2 py-1 border-0 focus:outline-none focus:ring-2 focus:ring-white/50"
-            >
-              {languages.map((l) => (
-                <option key={l} value={l}>
-                  {framework} {l}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         <div className="flex-1 p-3 min-h-0">
           <CodeEditor
             code={generatedScript || '// Generated script will appear here...\n// Select your framework, language, and click "Generate Script"'}
             language={language}
-            onChange={isEditing ? (val) => setGeneratedScript(val) : undefined}
+            onChange={(val) => setGeneratedScript(val)}
           />
         </div>
 
-        <FooterActions onTestRepository={() => toast('Test Repository opened')} />
+        <FooterActions
+          onExport={handleExport}
+          onExportExcel={handleExportExcel}
+          onTestRepository={() => toast('Test Repository opened')}
+        />
       </div>
     </div>
   )
