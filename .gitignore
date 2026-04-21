@@ -6,3 +6,4 @@ generated_*.txt
 generated_*.py
 generated_*.java
 generated_*.js
+/.vs
