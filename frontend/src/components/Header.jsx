@@ -2,6 +2,7 @@ import React from 'react'
 import { RiRobot2Line } from 'react-icons/ri'
 
 const titles = {
+  'project-setup': 'Project Setup',
   'test-cases': 'AI Test Case Generator',
   'script-generator': 'Test Script Generator',
 }

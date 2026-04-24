@@ -1,8 +1,9 @@
 import React from 'react'
-import { FiFileText, FiCode, FiSettings, FiHelpCircle } from 'react-icons/fi'
+import { FiFileText, FiCode, FiSettings, FiHelpCircle, FiGitBranch } from 'react-icons/fi'
 import { RiRobot2Line } from 'react-icons/ri'
 
 const navItems = [
+  { id: 'project-setup', label: 'Project Setup', icon: FiGitBranch },
   { id: 'test-cases', label: 'Test Cases', icon: FiFileText },
   { id: 'script-generator', label: 'Script Generator', icon: FiCode },
 ]

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { FiUpload, FiSearch, FiFilter, FiZap, FiRefreshCw } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
@@ -62,8 +62,15 @@ function parseTestCasesFromText(text) {
   return cases.length > 0 ? cases : null
 }
 
-export default function TestCaseGenerator({ onTestCasesGenerated }) {
+export default function TestCaseGenerator({ onTestCasesGenerated, preloadedRequirement, onRequirementConsumed }) {
   const [requirement, setRequirement] = useState('')
+
+  useEffect(() => {
+    if (preloadedRequirement) {
+      setRequirement(preloadedRequirement)
+      onRequirementConsumed?.()
+    }
+  }, [preloadedRequirement])
   const [testType, setTestType] = useState('UI')
   const [loading, setLoading] = useState(false)
   const [testCases, setTestCases] = useState([])

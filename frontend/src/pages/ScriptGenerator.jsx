@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react'
-import { FiPlay, FiRefreshCw, FiUpload } from 'react-icons/fi'
+import { FiPlay, FiRefreshCw, FiUpload, FiZap, FiLoader } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
 import CodeEditor from '../components/CodeEditor'
 import FooterActions from '../components/FooterActions'
-import { generateScript } from '../services/api'
+import TestResultsTable from '../components/TestResultsTable'
+import { generateScript, executeTests } from '../services/api'
 
-export default function ScriptGenerator({ generatedTestCases }) {
+export default function ScriptGenerator({ generatedTestCases, onScriptGenerated }) {
   const [scriptSource, setScriptSource] = useState('generated')
   const [manualTestCases, setManualTestCases] = useState('')
   const [appUrl, setAppUrl] = useState('')
@@ -15,6 +16,9 @@ export default function ScriptGenerator({ generatedTestCases }) {
   const [generatedScript, setGeneratedScript] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [execLoading, setExecLoading] = useState(false)
+  const [execResults, setExecResults] = useState(null)
+  const [execRunId, setExecRunId] = useState(null)
   const fileInputRef = useRef(null)
 
   const frameworks = [
@@ -42,8 +46,10 @@ export default function ScriptGenerator({ generatedTestCases }) {
     setLoading(true)
     setError('')
     try {
-      const data = await generateScript(testCases, framework, language)
+      const data = await generateScript(testCases, framework, language, appUrl)
       setGeneratedScript(data.script)
+      setExecResults(null)
+      onScriptGenerated?.(data.script, language)
       toast.success('Script generated successfully!')
     } catch (err) {
       console.error('Script generation failed:', err)
@@ -76,7 +82,7 @@ export default function ScriptGenerator({ generatedTestCases }) {
     setLoading(true)
     setError('')
     try {
-      const data = await generateScript(testCases, framework, newLanguage)
+      const data = await generateScript(testCases, framework, newLanguage, appUrl)
       setGeneratedScript(data.script)
       toast.success(`Script regenerated in ${newLanguage}`)
     } catch (err) {
@@ -86,6 +92,30 @@ export default function ScriptGenerator({ generatedTestCases }) {
       toast.error(message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRunTests = async () => {
+    if (!generatedScript) {
+      toast.error('Generate a script first before running tests')
+      return
+    }
+    if (language !== 'Python') {
+      toast.error('Execution is currently supported for Python only. Switch language to Python.')
+      return
+    }
+    setExecLoading(true)
+    setExecResults(null)
+    try {
+      const data = await executeTests(generatedScript, framework, language)
+      setExecResults({ tests: data.tests, summary: data.summary })
+      setExecRunId(data.run_id)
+      const s = data.summary
+      toast.success(`Execution complete — ${s.passed} passed, ${s.failed} failed`)
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Test execution failed')
+    } finally {
+      setExecLoading(false)
     }
   }
 
@@ -279,7 +309,7 @@ export default function ScriptGenerator({ generatedTestCases }) {
           <div className="p-4 space-y-2">
             <button
               onClick={handleGenerate}
-              disabled={loading}
+              disabled={loading || execLoading}
               className="btn-primary w-full justify-center"
             >
               {loading ? (
@@ -294,6 +324,25 @@ export default function ScriptGenerator({ generatedTestCases }) {
                 </>
               )}
             </button>
+
+            <button
+              onClick={handleRunTests}
+              disabled={!generatedScript || execLoading || loading}
+              className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title={language !== 'Python' ? 'Switch to Python to enable execution' : ''}
+            >
+              {execLoading ? (
+                <><FiLoader className="animate-spin" /> Running Tests…</>
+              ) : (
+                <><FiZap /> Run Tests</>
+              )}
+            </button>
+
+            {language !== 'Python' && generatedScript && (
+              <p className="text-xs text-amber-600">
+                Execution requires Python. Switch language to Python to enable Run Tests.
+              </p>
+            )}
             {error && (
               <p className="text-xs text-red-600 mt-1">{error}</p>
             )}
@@ -307,12 +356,21 @@ export default function ScriptGenerator({ generatedTestCases }) {
           <h2>Output Panel</h2>
         </div>
 
-        <div className="flex-1 p-3 min-h-0">
+        <div className="flex-1 p-3 min-h-0 overflow-auto flex flex-col gap-3">
           <CodeEditor
             code={generatedScript || '// Generated script will appear here...\n// Select your framework, language, and click "Generate Script"'}
             language={language}
             onChange={(val) => setGeneratedScript(val)}
           />
+          {execLoading && (
+            <div className="flex items-center justify-center gap-3 py-6 text-gray-500 text-sm border border-gray-200 rounded-xl">
+              <FiLoader className="animate-spin text-green-600 text-lg" />
+              Running tests against your application… this may take up to 3 minutes
+            </div>
+          )}
+          {execResults && (
+            <TestResultsTable results={execResults} runId={execRunId} />
+          )}
         </div>
 
         <FooterActions

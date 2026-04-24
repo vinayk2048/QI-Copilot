@@ -7,3 +7,4 @@ generated_*.py
 generated_*.java
 generated_*.js
 /.vs
+node_modules/
