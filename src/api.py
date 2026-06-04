@@ -5,10 +5,15 @@ Does NOT modify any existing modules - only exposes them as REST endpoints.
 
 import sys
 import os
+import uuid as uuid_lib
+import threading
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
+
+# In-memory store for background test runs
+_bg_runs: dict = {}
 
 # Ensure src is on path
 sys.path.insert(0, os.path.dirname(__file__))
@@ -18,6 +23,7 @@ from script_generator import ScriptGenerator
 from file_writer import FileWriter
 from devops_connector import DevOpsConnector
 from repo_manager import RepoManager
+from db import get_db
 from test_executor import TestExecutor
 from result_parser import ResultParser
 
@@ -88,6 +94,35 @@ async def execute_tests(req: ExecuteRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/execute-tests/background")
+def start_background_run(req: ExecuteRequest):
+    """Start a test run in a background thread and return a run_id immediately."""
+    run_id = str(uuid_lib.uuid4())[:8]
+    _bg_runs[run_id] = {"status": "running", "data": None, "error": None}
+
+    def worker():
+        try:
+            executor = TestExecutor()
+            raw = executor.run(req.script, req.framework, req.language)
+            if not raw.get("supported"):
+                _bg_runs[run_id] = {"status": "error", "data": None, "error": raw.get("error", "Unsupported")}
+                return
+            result = ResultParser.parse(raw.get("result_file"), raw.get("stdout", ""), raw.get("stderr", ""))
+            _bg_runs[run_id] = {"status": "done", "data": {**result, "run_id": run_id}, "error": None}
+        except Exception as exc:
+            _bg_runs[run_id] = {"status": "error", "data": None, "error": str(exc)}
+
+    threading.Thread(target=worker, daemon=True).start()
+    return {"run_id": run_id, "status": "running"}
+
+
+@app.get("/api/execute-tests/{run_id}/status")
+def poll_background_run(run_id: str):
+    if run_id not in _bg_runs:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return _bg_runs[run_id]
+
+
 @app.get("/api/test-cases")
 def get_test_cases():
     content = FileWriter.read_test_cases_from_file()
@@ -116,6 +151,15 @@ class ConnectRequest(BaseModel):
     org_url: Optional[str] = ""
     username: Optional[str] = ""
     project: Optional[str] = ""
+
+
+class ListBranchesRequest(BaseModel):
+    platform: str
+    pat: str
+    org_url: Optional[str] = ""
+    username: Optional[str] = ""
+    project: Optional[str] = ""
+    repo: str
 
 
 class ListFilesRequest(BaseModel):
@@ -189,6 +233,16 @@ def project_connect(req: ConnectRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/project/list-branches")
+def project_list_branches(req: ListBranchesRequest):
+    try:
+        connector = _make_connector(req)
+        branches = connector.list_branches(req.repo, req.project or None)
+        return {"branches": branches}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/project/list-files")
 def project_list_files(req: ListFilesRequest):
     try:
@@ -233,6 +287,69 @@ def project_trigger_pipeline(req: TriggerPipelineRequest):
         connector = _make_connector(req)
         result = connector.trigger_pipeline(req.repo, req.branch, req.project or None)
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ------------------------------------------------------------------ #
+# Saved Projects — persistent credential store
+# ------------------------------------------------------------------ #
+
+class SaveProjectRequest(BaseModel):
+    name: str
+    platform: str
+    pat: str
+    org_url: Optional[str] = ""
+    project: Optional[str] = ""
+    username: Optional[str] = ""
+
+
+@app.get("/api/saved-projects")
+def list_saved_projects():
+    try:
+        conn = get_db()
+        rows = conn.execute(
+            "SELECT id, name, platform, org_url, project, username, pat, created_at "
+            "FROM saved_projects ORDER BY created_at DESC"
+        ).fetchall()
+        conn.close()
+        return {"projects": [dict(r) for r in rows]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/saved-projects")
+def save_project(req: SaveProjectRequest):
+    try:
+        conn = get_db()
+        existing = conn.execute(
+            "SELECT id FROM saved_projects WHERE name = ?", (req.name,)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE saved_projects SET platform=?, org_url=?, project=?, username=?, pat=? WHERE name=?",
+                (req.platform, req.org_url or "", req.project or "", req.username or "", req.pat, req.name)
+            )
+        else:
+            conn.execute(
+                "INSERT INTO saved_projects (name, platform, org_url, project, username, pat) VALUES (?,?,?,?,?,?)",
+                (req.name, req.platform, req.org_url or "", req.project or "", req.username or "", req.pat)
+            )
+        conn.commit()
+        conn.close()
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/saved-projects/{project_id}")
+def delete_saved_project(project_id: int):
+    try:
+        conn = get_db()
+        conn.execute("DELETE FROM saved_projects WHERE id = ?", (project_id,))
+        conn.commit()
+        conn.close()
+        return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

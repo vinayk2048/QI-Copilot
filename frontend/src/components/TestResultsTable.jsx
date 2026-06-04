@@ -81,7 +81,9 @@ export default function TestResultsTable({ results, runId }) {
     XLSX.writeFile(wb, `test_results_${runId || 'run'}.xlsx`)
   }
 
-  const passRate = summary.total > 0 ? Math.round((summary.passed / summary.total) * 100) : 0
+  const passRate = summary.total > 0 && summary.passed > 0
+    ? Math.round((summary.passed / summary.total) * 100)
+    : 0
 
   return (
     <div className="mt-4 border border-gray-200 rounded-xl overflow-hidden">

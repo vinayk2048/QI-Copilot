@@ -11,25 +11,48 @@ class ScriptGenerator:
             if app_url else ""
         )
 
-        prompt = f"""
-        You are an automation expert.
+        prompt = f"""You are an automation expert. Convert the test cases below into a fully runnable {framework} {language} script.
+{url_instruction}
+STRICT RULES:
+- Output ONLY raw Python code. No markdown, no triple backticks, no explanations.
+- Every test function MUST start with "test_" (required for pytest to collect it).
+- For Playwright Python use pytest-playwright fixtures: def test_xxx(page):
+- Each test case becomes one test function.
+- Do NOT use classes — use plain functions only.
+- Do NOT include if __name__ == "__main__" blocks.
+- Start the file with imports, then write the test functions immediately.
 
-        Convert the following test cases into a fully runnable automation script.
+Example of correct format:
+import re
+from playwright.sync_api import Page, expect
 
-        Framework: {framework}
-        Language: {language}{url_instruction}
+def test_login_valid_credentials(page: Page):
+    page.goto("https://example.com/login")
+    page.fill("#username", "admin")
+    page.fill("#password", "secret")
+    page.click("button[type=submit]")
+    expect(page).to_have_url(re.compile(".*dashboard.*"))
 
-        Rules:
-        - Follow best coding practices for {framework} in {language}
-        - Use proper test structure with setup and teardown
-        - Each test case must be its own test function named test_<snake_case_title>
-        - Add brief inline comments
-        - Output ONLY the code — no explanations, no markdown fences
-        - For Playwright Python: use pytest-playwright fixtures (page, browser)
-        - For Selenium Python: use unittest.TestCase with setUp/tearDown
+def test_login_invalid_password(page: Page):
+    page.goto("https://example.com/login")
+    page.fill("#username", "admin")
+    page.fill("#password", "wrong")
+    page.click("button[type=submit]")
+    expect(page.locator(".error-message")).to_be_visible()
 
-        Test Cases:
-        {test_cases}
-        """
+Now generate the script for these test cases:
+{test_cases}"""
 
-        return self.grok.generate_response(prompt)
+        raw = self.grok.generate_response(prompt)
+        return self._strip_fences(raw)
+
+    @staticmethod
+    def _strip_fences(code: str) -> str:
+        """Remove markdown code fences the LLM adds despite instructions."""
+        import re
+        code = code.strip()
+        # Remove opening fence: ```python or ```
+        code = re.sub(r'^```[a-zA-Z]*\n?', '', code)
+        # Remove closing fence
+        code = re.sub(r'\n?```\s*$', '', code)
+        return code.strip()

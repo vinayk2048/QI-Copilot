@@ -44,7 +44,18 @@ export async function uploadRequirements(file) {
 // ------------------------------------------------------------------ //
 
 export async function executeTests(script, framework, language) {
-  const { data } = await api.post('/execute-tests', { script, framework, language }, { timeout: 300000 })
+  // No timeout cap — tests run until completion (use "Run in Background" for long suites)
+  const { data } = await api.post('/execute-tests', { script, framework, language }, { timeout: 0 })
+  return data
+}
+
+export async function executeTestsBackground(script, framework, language) {
+  const { data } = await api.post('/execute-tests/background', { script, framework, language })
+  return data
+}
+
+export async function pollRunStatus(runId) {
+  const { data } = await api.get(`/execute-tests/${runId}/status`)
   return data
 }
 
@@ -54,6 +65,13 @@ export async function executeTests(script, framework, language) {
 
 export async function connectDevOps(platform, credentials) {
   const { data } = await api.post('/project/connect', { platform, ...credentials })
+  return data
+}
+
+export async function listBranches(platform, credentials, repo) {
+  const { data } = await api.post('/project/list-branches', {
+    platform, ...credentials, repo,
+  })
   return data
 }
 
@@ -82,5 +100,24 @@ export async function triggerPipeline(platform, credentials, repo, branch) {
   const { data } = await api.post('/project/trigger-pipeline', {
     platform, ...credentials, repo, branch,
   })
+  return data
+}
+
+// ------------------------------------------------------------------ //
+// Saved Projects API
+// ------------------------------------------------------------------ //
+
+export async function listSavedProjects() {
+  const { data } = await api.get('/saved-projects')
+  return data
+}
+
+export async function saveProject(details) {
+  const { data } = await api.post('/saved-projects', details)
+  return data
+}
+
+export async function deleteSavedProject(id) {
+  const { data } = await api.delete(`/saved-projects/${id}`)
   return data
 }

@@ -66,7 +66,14 @@ class DevOpsConnector:
             return {"success": False, "error": f"Unknown platform: {self.platform}"}
 
         except requests.HTTPError as e:
-            return {"success": False, "error": f"Auth failed ({e.response.status_code}): check your credentials"}
+            code = e.response.status_code
+            if code == 401 or code == 403:
+                msg = f"Auth failed ({code}): invalid or expired PAT token"
+            elif code == 404:
+                msg = f"Not found ({code}): check that the Organization URL is correct (e.g. https://saketatfs.visualstudio.com or https://dev.azure.com/your-org)"
+            else:
+                msg = f"Request failed ({code}): {e.response.text[:200]}"
+            return {"success": False, "error": msg}
         except Exception as e:
             return {"success": False, "error": str(e)}
 
@@ -150,9 +157,12 @@ class DevOpsConnector:
 
             elif self.platform == "azuredevops":
                 scope = f"/{path}" if path else "/"
+                params = {"scopePath": scope, "recursionLevel": "OneLevel", "api-version": "7.0"}
+                if branch:
+                    params["versionDescriptor.version"] = branch
+                    params["versionDescriptor.versionType"] = "branch"
                 data = self._get(f"{self.base_url}/{proj}/_apis/git/repositories/{repo}/items",
-                                 params={"scopePath": scope, "recursionLevel": "OneLevel",
-                                         "api-version": "7.0"})
+                                 params=params)
                 items = data.get("value", [])
                 return [{"name": i["path"].split("/")[-1], "path": i["path"].lstrip("/"),
                          "type": "dir" if i.get("isFolder") else "file"}
@@ -183,8 +193,9 @@ class DevOpsConnector:
                 return resp.text
 
             elif self.platform == "azuredevops":
+                ado_path = path if path.startswith("/") else f"/{path}"
                 resp = self.session.get(f"{self.base_url}/{proj}/_apis/git/repositories/{repo}/items",
-                                        params={"path": path,
+                                        params={"path": ado_path,
                                                 "versionDescriptor.version": branch,
                                                 "api-version": "7.0",
                                                 "$format": "text"}, timeout=30)

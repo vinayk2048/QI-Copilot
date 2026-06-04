@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { FiFolder, FiFile, FiRefreshCw, FiLoader, FiAlertCircle } from 'react-icons/fi'
-import { listRepoFiles } from '../services/api.js'
+import { listBranches, listRepoFiles } from '../services/api.js'
 
 export default function RepoFileBrowser({ platform, credentials, repos, onFilesSelected, onBranchChange }) {
   const [selectedRepo, setSelectedRepo] = useState('')
@@ -28,11 +28,12 @@ export default function RepoFileBrowser({ platform, credentials, repos, onFilesS
 
     setLoading(true)
     try {
-      const data = await listRepoFiles(platform, credentials, repoFullName, 'main')
-      setBranches(data.branches || [])
-      const defaultBranch = data.branches?.includes('main') ? 'main'
-        : data.branches?.includes('master') ? 'master'
-        : data.branches?.[0] || ''
+      const data = await listBranches(platform, credentials, repoFullName)
+      const branchList = data.branches || []
+      setBranches(branchList)
+      const defaultBranch = branchList.includes('main') ? 'main'
+        : branchList.includes('master') ? 'master'
+        : branchList[0] || ''
       setSelectedBranch(defaultBranch)
       onBranchChange?.({ repo: repoFullName, branch: defaultBranch })
     } catch (err) {
