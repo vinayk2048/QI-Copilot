@@ -85,11 +85,11 @@ Step 2: Generate Automation Script
 
     1. Clone Repository
         -git clone <your-public-repo-url>
-        -cd Hackathon-Project
+        -cd QI-Copilot
 
     2. Create Virtual Environment
         -python -m venv venv
-       Activate: 
+       Activate:
         -Windows: (venv\Scripts\activate)
         -Mac/Linux: (source venv/bin/activate)
 
@@ -99,15 +99,49 @@ Step 2: Generate Automation Script
     4. Configure Environment Variables
         -Create .env file from example:
             GROK_API_KEY=your_actual_api_key_here
-            MODEL_NAME=llama3-70b-8192
+            MODEL_NAME=llama-3.3-70b-versatile
             TEMPERATURE=0.7
             MAX_TOKENS=2000
+        -Get a free API key at https://console.groq.com/keys
         -Do NOT commit .env to GitHub.
 
 
 ▶️ Run the Application
 
-    -python src/main.py
+    Option A - Quick start (Windows PowerShell)
+        -Backend:  .\run-backend.ps1
+        -Frontend: .\run-frontend.ps1   (run in a second terminal)
+
+    Option B - Manual
+        -Backend (FastAPI):  cd src ; uvicorn api:app --reload --port 8000
+        -Frontend (React):   cd frontend ; npm install ; npm run dev
+        -Open http://localhost:3000
+
+    CLI (no UI)
+        -python src/main.py
+
+🔌 API Endpoints
+
+    -GET  /api/health               - service + API key status
+    -POST /api/generate-test-cases  - generate test cases from a user story
+    -POST /api/generate-script      - generate an automation script
+    -GET  /api/test-cases           - read the latest generated test cases
+    -POST /api/upload-requirements  - extract text from .txt/.md/.docx/.pdf
+
+🛠️ Troubleshooting
+
+    1. 500 error on "Generate Test Cases" / "Generate Script"
+        -Cause: backend not running, dependencies missing, or GROK_API_KEY not set.
+        -Fix: run run-backend.ps1, then open http://localhost:8000/api/health
+              and confirm "api_key_configured": true.
+    2. "GROK_API_KEY is not configured"
+        -Add your key to .env and restart the backend.
+    3. "Could not parse test cases from the response"
+        -The LLM reply did not match the expected format; verify MODEL_NAME in .env.
+    4. Uploaded .docx / .pdf returns an error
+        -Install dependencies: pip install -r requirements.txt (pypdf, python-docx).
+    5. Port already in use
+        -Backend: .\run-backend.ps1 -Port 8001 (also update the Vite proxy target).
 
 🧠 Technical Highlights
 
