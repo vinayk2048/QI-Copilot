@@ -8,6 +8,7 @@ import os
 import io
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 
@@ -124,6 +125,27 @@ async def upload_requirements(file: UploadFile = File(...)):
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+def _frontend_dist() -> Optional[str]:
+    override = os.getenv("FRONTEND_DIST")
+    if override and os.path.isdir(override):
+        return override
+
+    src_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(src_dir, "..", "frontend", "dist"),
+        os.path.join(os.getcwd(), "frontend", "dist"),
+    ]
+    for candidate in candidates:
+        if os.path.isdir(candidate):
+            return candidate
+    return None
+
+
+_frontend = _frontend_dist()
+if _frontend:
+    app.mount("/", StaticFiles(directory=_frontend, html=True), name="frontend")
 
 
 if __name__ == "__main__":

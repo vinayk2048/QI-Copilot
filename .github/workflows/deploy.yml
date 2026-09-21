@@ -1,4 +1,4 @@
-name: Deploy qicopilot to Azure Web App
+name: Deploy qicopilot (frontend + FastAPI backend) to Azure Web App
 
 on:
   push:
@@ -13,7 +13,7 @@ env:
 
 jobs:
   build-and-deploy:
-    name: Build frontend and deploy to Azure Web App
+    name: Build React app and deploy combined package to Azure Web App
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -24,17 +24,28 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
 
       - name: Build frontend
         working-directory: frontend
-        run: npm run build --if-present
+        run: npm run build
+
+      - name: Assemble deployment package (src + frontend/dist + requirements + startup)
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force deploy -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path deploy, deploy\src, deploy\frontend\dist -Force | Out-Null
+          Copy-Item src\* deploy\src\ -Recurse
+          Copy-Item frontend\dist\* deploy\frontend\dist\ -Recurse
+          Copy-Item requirements.txt deploy\
+          Copy-Item startup.txt deploy\
+          Get-ChildItem -Recurse deploy | Select-Object FullName
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: frontend/dist
+          package: deploy
