@@ -18,8 +18,8 @@ export default function ScriptGenerator({ generatedTestCases }) {
   const fileInputRef = useRef(null)
 
   const frameworks = [
-    { id: 'Selenium', label: 'Selenium Java' },
-    { id: 'Playwright', label: 'Playwright Python' },
+    { id: 'Selenium', label: 'Selenium' },
+    { id: 'Playwright', label: 'Playwright' },
     { id: 'Appium', label: 'Appium' },
     { id: 'RestAssured', label: 'Rest Assured' },
   ]
@@ -99,13 +99,15 @@ export default function ScriptGenerator({ generatedTestCases }) {
       toast.error('No script to export')
       return
     }
-    const blob = new Blob([generatedScript], { type: 'text/plain' })
+    const blob = new Blob([generatedScript], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = `generated_script.${getFileExtension()}`
+    document.body.appendChild(a)
     a.click()
-    URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
     toast.success('Script exported')
   }
 

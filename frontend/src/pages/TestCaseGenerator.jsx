@@ -106,18 +106,25 @@ export default function TestCaseGenerator({ onTestCasesGenerated }) {
     const file = e.target.files?.[0]
     if (!file) return
 
+    const isPlainText = /\.(txt|md|csv)$/i.test(file.name)
     try {
       const data = await uploadRequirements(file)
       setRequirement(data.content)
       toast.success('File uploaded successfully')
-    } catch {
-      // Fallback: read file client-side
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        setRequirement(ev.target.result)
-        toast.success('File loaded')
+    } catch (err) {
+      const message = err.response?.data?.detail || err.message || 'Failed to read file'
+      if (isPlainText) {
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+          setRequirement(ev.target.result)
+          toast.success('File loaded')
+        }
+        reader.readAsText(file)
+      } else {
+        toast.error(message)
       }
-      reader.readAsText(file)
+    } finally {
+      e.target.value = ''
     }
   }
 
@@ -129,13 +136,15 @@ export default function TestCaseGenerator({ onTestCasesGenerated }) {
     const content = testCases.map(tc =>
       `${tc.id}: ${tc.scenario}\nSteps:\n${tc.steps.join('\n')}\nExpected Result: ${tc.expectedResult}\nPriority: ${tc.priority}\n`
     ).join('\n---\n\n')
-    const blob = new Blob([content], { type: 'text/plain' })
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = 'test_cases.txt'
+    document.body.appendChild(a)
     a.click()
-    URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
     toast.success('Test cases exported')
   }
 
