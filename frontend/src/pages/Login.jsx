@@ -12,6 +12,7 @@ import {
 } from 'react-icons/ri'
 import { login } from '../services/api'
 import { setToken } from '../auth'
+import pravalLogo from '../assets/praval-logo-text.svg'
 
 const FEATURES = [
   {
@@ -72,13 +73,14 @@ export default function Login({ onSuccess }) {
       <div className="relative flex flex-1">
         <div className="hidden lg:flex flex-col flex-1 justify-between px-14 py-12 text-white animate-fade-in">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-white/5 ring-1 ring-white/10 flex items-center justify-center backdrop-blur">
-              <RiShieldCheckLine className="text-[#64b6ff] text-xl" />
+            <div className="rounded-lg bg-white p-2 shadow-md flex items-center">
+              <img
+                src={pravalLogo}
+                alt="Praval"
+                className="h-7 w-auto"
+              />
             </div>
             <div>
-              <p className="text-sm font-semibold tracking-[0.24em] uppercase text-[#8fb8e0]">
-                Praval
-              </p>
               <p className="text-[11px] text-white/40">Enterprise Quality Engineering</p>
             </div>
           </div>
