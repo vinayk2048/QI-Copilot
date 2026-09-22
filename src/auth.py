@@ -18,6 +18,16 @@ from pydantic import BaseModel
 
 ALGORITHM = "HS256"
 
+# Demo fallback users - only used when APP_USERS is not configured.
+# Override in App Settings / .env for anything beyond an internal demo.
+DEFAULT_USERS = {
+    "admin": "Admin@123",
+    "qa.test": "Qa@2026",
+    "demo.user": "Demo@456",
+}
+
+DEFAULT_SECRET = "qi-copilot-demo-secret-change-before-production"
+
 
 class LoginRequest(BaseModel):
     username: str
@@ -37,6 +47,13 @@ class _UserStore:
                 self.users[username.strip()] = password
             else:
                 self.users[part] = part
+        if not self.users:
+            self.users = dict(DEFAULT_USERS)
+            print(
+                "WARNING: APP_USERS not configured - using demo users "
+                "(admin/Admin@123, qa.test/Qa@2026, demo.user/Demo@456). "
+                "Set APP_USERS for production."
+            )
 
     def verify(self, username: str, password: str) -> bool:
         expected = self.users.get(username)
@@ -48,9 +65,11 @@ class _UserStore:
 def _get_secret() -> str:
     secret = os.getenv("APP_AUTH_SECRET", "").strip()
     if not secret:
-        raise RuntimeError(
-            "APP_AUTH_SECRET is not configured. Add it to .env (dev) or App Settings (Azure)."
+        print(
+            "WARNING: APP_AUTH_SECRET not configured - using demo default secret. "
+            "Set a unique secret for production."
         )
+        return DEFAULT_SECRET
     return secret
 
 
