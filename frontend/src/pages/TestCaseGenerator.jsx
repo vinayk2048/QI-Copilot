@@ -308,7 +308,7 @@ export default function TestCaseGenerator({ onTestCasesGenerated }) {
         <FooterActions
           onExport={handleExport}
           onExportExcel={handleExportExcel}
-          onTestRepository={() => toast('Test Repository opened')}
+          onTestRepository={() => toast('Test Repository - future integration (coming soon)', { icon: '🔜' })}
         />
       </div>
     </div>

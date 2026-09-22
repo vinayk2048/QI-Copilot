@@ -1,5 +1,8 @@
 import React from 'react'
 import { FiDownload, FiGrid, FiShare2, FiBookmark, FiSave, FiCloud } from 'react-icons/fi'
+import toast from 'react-hot-toast'
+
+const comingSoon = (name) => toast(`${name} - future integration (coming soon)`, { icon: '🔜' })
 
 export default function FooterActions({ onExport, onExportExcel, onTestRepository }) {
   return (
@@ -14,19 +17,19 @@ export default function FooterActions({ onExport, onExportExcel, onTestRepositor
           <FiGrid className="text-sm" />
           Excel
         </button>
-        <button className="btn-outline">
+        <button className="btn-outline" onClick={() => comingSoon('Jira')}>
           <FiShare2 className="text-sm" />
           Jira
         </button>
-        <button className="btn-outline">
+        <button className="btn-outline" onClick={() => comingSoon('Azure DevOps')}>
           <FiCloud className="text-sm" />
           Azure DevOps
         </button>
-        <button className="btn-outline">
+        <button className="btn-outline" onClick={() => comingSoon('TestRail')}>
           <FiBookmark className="text-sm" />
           TestRail
         </button>
-        <button className="btn-outline">
+        <button className="btn-outline" onClick={() => comingSoon('Save')}>
           <FiSave className="text-sm" />
           Save
         </button>

@@ -19,20 +19,6 @@ export default function Header({ activeTab, userName = '', onLogout }) {
       </div>
 
       <div className="flex items-center gap-3">
-        {activeTab === 'script-generator' && (
-          <>
-            <HeaderButton icon="📤" label="Export Script" />
-            <HeaderButton icon="📌" label="Push to Git" />
-            <HeaderButton icon="🚀" label="Send to CI/CD" />
-          </>
-        )}
-        {activeTab === 'test-cases' && (
-          <>
-            <HeaderButton icon="📤" label="Export" />
-            <HeaderButton icon="📌" label="Push" />
-            <HeaderButton icon="🧪" label="TestRail" />
-          </>
-        )}
         {userName && (
           <div className="flex items-center gap-2.5 ml-3 pl-3 border-l border-white/25">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-semibold">
@@ -50,14 +36,5 @@ export default function Header({ activeTab, userName = '', onLogout }) {
         )}
       </div>
     </header>
-  )
-}
-
-function HeaderButton({ icon, label }) {
-  return (
-    <button className="flex items-center gap-1.5 text-white/90 hover:text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all">
-      <span className="text-base">{icon}</span>
-      {label}
-    </button>
   )
 }

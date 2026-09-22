@@ -9,7 +9,6 @@ import { generateScript } from '../services/api'
 export default function ScriptGenerator({ generatedTestCases }) {
   const [scriptSource, setScriptSource] = useState('generated')
   const [manualTestCases, setManualTestCases] = useState('')
-  const [appUrl, setAppUrl] = useState('')
   const [framework, setFramework] = useState('Selenium')
   const [language, setLanguage] = useState('Java')
   const [generatedScript, setGeneratedScript] = useState('')
@@ -207,20 +206,6 @@ export default function ScriptGenerator({ generatedTestCases }) {
             <h2>Input Panel</h2>
           </div>
           <div className="p-4 space-y-4">
-            {/* Application URL */}
-            <div>
-              <label className="text-sm font-medium text-gray-600 mb-1.5 block">
-                Application URL:
-              </label>
-              <input
-                type="url"
-                className="input-field"
-                placeholder="Enter application URL..."
-                value={appUrl}
-                onChange={(e) => setAppUrl(e.target.value)}
-              />
-            </div>
-
             {/* Test Case Selection */}
             <div>
               <label className="text-sm font-medium text-gray-600 mb-1.5 block">
@@ -320,7 +305,7 @@ export default function ScriptGenerator({ generatedTestCases }) {
         <FooterActions
           onExport={handleExport}
           onExportExcel={handleExportExcel}
-          onTestRepository={() => toast('Test Repository opened')}
+          onTestRepository={() => toast('Test Repository - future integration (coming soon)', { icon: '🔜' })}
         />
       </div>
     </div>
