@@ -7,7 +7,7 @@ import {
   RiLockLine,
   RiEyeLine,
   RiEyeOffLine,
-  RiCheckboxCircleLine,
+  RiCheckLine,
   RiArrowRightLine,
   RiSparkling2Line,
 } from 'react-icons/ri'
@@ -15,16 +15,24 @@ import { login } from '../services/api'
 import { setToken } from '../auth'
 
 const FEATURES = [
-  'Generate test cases from business requirements',
-  'Create automation scripts instantly using AI',
-  'Support Selenium, Playwright, Cypress, and RestAssured',
-  'Multi-language support: Java, Python, and JavaScript',
-  'Improve QA productivity and reduce manual effort',
+  {
+    title: 'Smart Test Case Generation',
+    description: 'Requirements to test cases in seconds',
+  },
+  {
+    title: 'Multi-Framework Support',
+    description: 'Selenium, Playwright, Cypress & RestAssured',
+  },
+  {
+    title: 'Enterprise Sync',
+    description: 'Seamless integration with Jira & Azure DevOps',
+  },
 ]
 
 export default function Login({ onSuccess }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -39,7 +47,7 @@ export default function Login({ onSuccess }) {
     setError('')
     try {
       const data = await login(username.trim(), password)
-      setToken(data.access_token)
+      setToken(data.access_token, remember)
       toast.success(`Welcome, ${data.username}!`)
       onSuccess()
     } catch (err) {
@@ -52,173 +60,230 @@ export default function Login({ onSuccess }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-[#0c1730] via-[#12294f] to-[#0b1226]">
-      <div className="hidden lg:flex flex-col flex-1 justify-between p-12 text-white animate-fade-in">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center backdrop-blur">
-            <RiShieldCheckLine className="text-[#7fd3ff] text-2xl" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold tracking-[0.22em] uppercase text-[#bcd9f2]">
-              Praval
-            </p>
-            <p className="text-xs text-white/45">Enterprise Quality Engineering</p>
-          </div>
-        </div>
+    <div className="relative min-h-screen flex flex-col bg-[#0A192F] overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-[#1d4ed8]/20 blur-[140px]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-40 -right-32 w-[600px] h-[600px] rounded-full bg-[#0ea5e9]/15 blur-[150px]"
+      />
 
-        <div className="max-w-xl">
-          <div className="flex items-center gap-5 mb-8 animate-float-glow">
-            <div className="w-16 h-16 bg-gradient-to-br from-[#4a6fa5] to-[#5b8dc9] rounded-2xl flex items-center justify-center shadow-2xl shadow-[#3b5998]/40">
-              <RiRobot2Line className="text-white text-4xl" />
+      <div className="relative flex flex-1">
+        <div className="hidden lg:flex flex-col flex-1 justify-between px-14 py-12 text-white animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-white/5 ring-1 ring-white/10 flex items-center justify-center backdrop-blur">
+              <RiShieldCheckLine className="text-[#64b6ff] text-xl" />
             </div>
-            <h1 className="text-4xl font-bold tracking-tight text-white">
-              QI Copilot
-            </h1>
-          </div>
-
-          <p className="text-xl font-medium text-[#cfe2f6]">AI-Powered Quality Engineering Platform</p>
-          <p className="mt-3 text-[15px] leading-relaxed text-white/60 max-w-lg">
-            Accelerate software testing with AI-generated test cases, automation scripts,
-            and intelligent quality engineering workflows.
-          </p>
-
-          <ul className="mt-8 space-y-3.5">
-            {FEATURES.map((item) => (
-              <li key={item} className="flex items-start gap-3 text-[15px] text-white/75">
-                <RiCheckboxCircleLine className="mt-0.5 shrink-0 text-[#7fd3ff] text-lg" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="flex items-center gap-2 text-white/35 text-xs">
-          <RiSparkling2Line className="text-sm" />
-          <span>AI-Assisted Quality Engineering · © {new Date().getFullYear()} Praval</span>
-        </div>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden text-center mb-6 animate-fade-in">
-            <div className="inline-flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#4a6fa5] to-[#5b8dc9] rounded-2xl flex items-center justify-center shadow-lg">
-                <RiRobot2Line className="text-white text-2xl" />
-              </div>
-              <span className="text-white text-2xl font-bold tracking-tight">QI Copilot</span>
+            <div>
+              <p className="text-sm font-semibold tracking-[0.24em] uppercase text-[#8fb8e0]">
+                Praval
+              </p>
+              <p className="text-[11px] text-white/40">Enterprise Quality Engineering</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-2xl shadow-black/30 ring-1 ring-black/5 px-8 py-9 sm:px-10 sm:py-10 animate-fade-in-up">
-            <div className="flex flex-col items-center text-center mb-7">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#3b5998] to-[#5b8dc9] flex items-center justify-center shadow-lg shadow-[#3b5998]/30 mb-4">
+          <div className="max-w-lg">
+            <div className="flex items-center gap-4 mb-7">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1d4ed8] to-[#0ea5e9] flex items-center justify-center shadow-2xl shadow-blue-900/50">
                 <RiRobot2Line className="text-white text-3xl" />
               </div>
-              <h2 className="text-2xl sm:text-[26px] font-bold tracking-tight text-slate-800">
-                Welcome Back
-              </h2>
-              <p className="mt-2 text-sm text-slate-500 leading-relaxed max-w-xs">
-                Sign in to access AI-powered test case generation and automation capabilities.
-              </p>
+              <h1 className="text-5xl font-extrabold tracking-tight">QI Copilot</h1>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-5">
-              <div>
-                <label
-                  htmlFor="username"
-                  className="block text-sm font-semibold text-slate-700 mb-1.5"
-                >
-                  Username
-                </label>
-                <div className="relative">
-                  <RiUserLine
-                    aria-hidden="true"
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"
-                  />
-                  <input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.form.requestSubmit()}
-                    placeholder="Enter your username"
-                    autoComplete="username"
-                    autoFocus
-                    aria-label="Username"
-                    className="login-focus-ring w-full pl-11 pr-4 py-3 rounded-xl border border-slate-300 bg-slate-50 hover:bg-white text-slate-800 text-sm placeholder:text-slate-400"
-                  />
-                </div>
-              </div>
+            <p className="text-xl font-medium text-[#cfe2f6]">
+              AI-Powered Quality Engineering Platform
+            </p>
+            <p className="mt-3 text-[15px] leading-relaxed text-white/55">
+              Accelerate testing with AI-generated test cases and automation scripts —
+              built for modern QA and engineering teams.
+            </p>
 
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-semibold text-slate-700 mb-1.5"
-                >
-                  Password
-                </label>
-                <div className="relative">
-                  <RiLockLine
-                    aria-hidden="true"
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"
-                  />
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.form.requestSubmit()}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    aria-label="Password"
-                    className="login-focus-ring w-full pl-11 pr-11 py-3 rounded-xl border border-slate-300 bg-slate-50 hover:bg-white text-slate-800 text-sm placeholder:text-slate-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    title={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#3b5998] p-1 rounded-md transition-colors login-focus-ring"
-                  >
-                    {showPassword ? <RiEyeOffLine className="text-lg" /> : <RiEyeLine className="text-lg" />}
-                  </button>
-                </div>
-              </div>
-
-              {error && (
+            <div className="mt-9 space-y-3">
+              {FEATURES.map((feature) => (
                 <div
-                  role="alert"
-                  className="text-sm bg-red-50 text-red-600 border border-red-200 rounded-xl px-4 py-2.5 animate-fade-in"
+                  key={feature.title}
+                  className="flex items-start gap-3.5 py-2.5 px-3.5 -mx-3.5 rounded-xl transition-colors duration-200 hover:bg-white/5"
                 >
-                  {error}
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1d4ed8]/90 shadow-lg shadow-blue-900/40">
+                    <RiCheckLine className="text-white text-sm" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="text-[15px] font-semibold text-white/90">{feature.title}</p>
+                    <p className="text-[13px] text-white/50">{feature.description}</p>
+                  </div>
                 </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#27407a] via-[#3b5998] to-[#5b8dc9] hover:from-[#1f3568] hover:via-[#3b5998] hover:to-[#4a7fc0] text-white font-semibold py-3 rounded-xl shadow-lg shadow-[#3b5998]/30 transition-all duration-200 hover:shadow-xl hover:shadow-[#3b5998]/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 login-focus-ring"
-              >
-                {loading ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    Access QI Copilot
-                    <RiArrowRightLine aria-hidden="true" className="text-lg" />
-                  </>
-                )}
-              </button>
-            </form>
+              ))}
+            </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-center gap-1.5 text-center animate-fade-in">
-            <RiShieldCheckLine className="text-[#9cc9ef] text-sm" aria-hidden="true" />
-            <span className="text-xs text-white/55">
-              Powered by <span className="font-semibold text-white/80">Praval</span>
-            </span>
+          <div className="flex items-center gap-2 text-[11px] text-white/30">
+            <RiSparkling2Line className="text-sm" aria-hidden="true" />
+            <span>AI-Assisted Quality Engineering · © {new Date().getFullYear()} Praval</span>
+          </div>
+        </div>
+
+        <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
+          <div className="w-full max-w-md">
+            <div className="lg:hidden text-center mb-7 animate-fade-in">
+              <div className="inline-flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#1d4ed8] to-[#0ea5e9] flex items-center justify-center shadow-lg">
+                  <RiRobot2Line className="text-white text-2xl" />
+                </div>
+                <span className="text-white text-2xl font-bold tracking-tight">QI Copilot</span>
+              </div>
+            </div>
+
+            <div className="rounded-3xl bg-white p-8 sm:p-10 shadow-2xl shadow-black/40 ring-1 ring-white/10 animate-fade-in-up">
+              <div className="mb-7">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#1d4ed8] to-[#0ea5e9] shadow-lg shadow-blue-300/40">
+                  <RiRobot2Line className="text-white text-2xl" aria-hidden="true" />
+                </div>
+                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                  Sign in to QI Copilot
+                </h2>
+                <p className="mt-1.5 text-sm text-slate-500">
+                  Enter QI Copilot credentials to access your account.
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} noValidate autoComplete="on">
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="username"
+                      className="mb-1.5 block text-sm font-medium text-slate-700"
+                    >
+                      Username / Email
+                    </label>
+                    <div className="relative">
+                      <RiUserLine
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-lg text-slate-400"
+                      />
+                      <input
+                        id="username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="you@praval.com"
+                        autoComplete="username"
+                        autoFocus
+                        aria-label="Username or email"
+                        className="login-focus-ring w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 placeholder:text-slate-400 transition-colors hover:bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="mb-1.5 block text-sm font-medium text-slate-700"
+                    >
+                      Password
+                    </label>
+                    <div className="relative">
+                      <RiLockLine
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-lg text-slate-400"
+                      />
+                      <input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        autoComplete="current-password"
+                        aria-label="Password"
+                        className="login-focus-ring w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-11 pr-11 text-sm text-slate-800 placeholder:text-slate-400 transition-colors hover:bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        title={showPassword ? 'Hide password' : 'Show password'}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition-colors hover:text-[#1d4ed8]"
+                      >
+                        {showPassword ? (
+                          <RiEyeOffLine className="text-lg" />
+                        ) : (
+                          <RiEyeLine className="text-lg" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-sm">
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-slate-600 select-none">
+                    <input
+                      type="checkbox"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 accent-[#1d4ed8]"
+                    />
+                    <span className="text-[13px]">Keep me logged in</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => toast('Please contact your QI Copilot administrator to reset your password.', { icon: '🔐' })}
+                    className="text-[13px] font-medium text-[#1d4ed8] transition-colors hover:text-[#0ea5e9]"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+
+                {error && (
+                  <div
+                    role="alert"
+                    className="mt-4 animate-fade-in rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600"
+                  >
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="login-focus-ring mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#1d4ed8] to-[#0ea5e9] py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40 hover:from-[#1e40af] hover:to-[#0284c7] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+                >
+                  {loading ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      Sign In to QI Copilot
+                      <RiArrowRightLine className="text-lg" aria-hidden="true" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            <div className="mt-7 text-center">
+              <div className="flex items-center justify-center gap-2 text-xs text-white/45">
+                <button onClick={() => toast('Privacy Policy', { icon: '🔒' })} className="transition-colors hover:text-white/80">
+                  Privacy Policy
+                </button>
+                <span className="text-white/20">|</span>
+                <button onClick={() => toast('Terms of Service', { icon: '📋' })} className="transition-colors hover:text-white/80">
+                  Terms of Service
+                </button>
+                <span className="text-white/20">|</span>
+                <button onClick={() => toast('Reach out to support@praval.com', { icon: '📧' })} className="transition-colors hover:text-white/80">
+                  Contact Support
+                </button>
+              </div>
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-white/60">
+                <RiShieldCheckLine className="text-[#9cc9ef] text-sm" aria-hidden="true" />
+                <span>
+                  Powered by <span className="font-semibold text-white/85">Praval</span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
