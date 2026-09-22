@@ -6,7 +6,7 @@ Does NOT modify any existing modules - only exposes them as REST endpoints.
 import sys
 import os
 import io
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from test_case_generator import TestCaseGenerator
 from script_generator import ScriptGenerator
 from file_writer import FileWriter
+from auth import LoginRequest, authenticate_user, get_current_user
 
 app = FastAPI(title="QI Copilot API")
 
@@ -44,8 +45,21 @@ class ScriptRequest(BaseModel):
     language: str
 
 
+@app.post("/api/login")
+def login(req: LoginRequest):
+    token = authenticate_user(req.username, req.password)
+    if not token:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    return {"access_token": token, "token_type": "bearer", "username": req.username}
+
+
+@app.post("/api/logout")
+def logout(current_user: str = Depends(get_current_user)):
+    return {"status": "ok", "username": current_user}
+
+
 @app.post("/api/generate-test-cases")
-def generate_test_cases(req: TestCaseRequest):
+def generate_test_cases(req: TestCaseRequest, current_user: str = Depends(get_current_user)):
     try:
         result = tc_generator.generate_test_cases(req.user_story, req.test_type)
         FileWriter.save_test_cases(result)
@@ -55,7 +69,7 @@ def generate_test_cases(req: TestCaseRequest):
 
 
 @app.post("/api/generate-script")
-def generate_script(req: ScriptRequest):
+def generate_script(req: ScriptRequest, current_user: str = Depends(get_current_user)):
     try:
         result = script_gen.generate_script(req.test_cases, req.framework, req.language)
         FileWriter.save_script(result, req.language)
@@ -65,7 +79,7 @@ def generate_script(req: ScriptRequest):
 
 
 @app.get("/api/test-cases")
-def get_test_cases():
+def get_test_cases(current_user: str = Depends(get_current_user)):
     content = FileWriter.read_test_cases_from_file()
     if not content:
         return {"test_cases": None}
@@ -114,7 +128,10 @@ def extract_text_from_upload(filename: str, data: bytes) -> str:
 
 
 @app.post("/api/upload-requirements")
-async def upload_requirements(file: UploadFile = File(...)):
+async def upload_requirements(
+    file: UploadFile = File(...),
+    current_user: str = Depends(get_current_user),
+):
     try:
         content = await file.read()
         text = extract_text_from_upload(file.filename, content)

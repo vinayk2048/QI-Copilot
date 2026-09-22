@@ -7,3 +7,4 @@ uvicorn==0.30.6
 python-multipart==0.0.9
 pypdf==6.19.0
 python-docx==1.2.0
+PyJWT==2.9.0
