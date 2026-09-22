@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 
 const comingSoon = (name) => toast(`${name} - future integration (coming soon)`, { icon: '🔜' })
 
-export default function FooterActions({ onExport, onExportExcel, onTestRepository }) {
+export default function FooterActions({ onExport, onExportExcel, onSave, onTestRepository }) {
   return (
     <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50/50 rounded-b-xl">
       {/* Left side buttons */}
@@ -29,7 +29,7 @@ export default function FooterActions({ onExport, onExportExcel, onTestRepositor
           <FiBookmark className="text-sm" />
           TestRail
         </button>
-        <button className="btn-outline" onClick={() => comingSoon('Save')}>
+        <button className="btn-outline" onClick={() => (onSave ? onSave() : comingSoon('Save'))}>
           <FiSave className="text-sm" />
           Save
         </button>

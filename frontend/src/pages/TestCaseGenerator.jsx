@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { FiUpload, FiSearch, FiFilter, FiZap, FiRefreshCw } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
@@ -71,6 +71,26 @@ export default function TestCaseGenerator({ onTestCasesGenerated }) {
   const [confidence, setConfidence] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('qi-testcases')
+    if (saved) {
+      setRawTestCases(saved)
+      const parsed = parseTestCasesFromText(saved)
+      if (parsed) setTestCases(parsed)
+      onTestCasesGenerated?.(saved)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleSave = () => {
+    if (!rawTestCases) {
+      toast.error('No test cases to save')
+      return
+    }
+    localStorage.setItem('qi-testcases', rawTestCases)
+    toast.success('Saved to browser - restored after refresh')
+  }
 
   const handleGenerate = async () => {
     if (!requirement.trim()) {
@@ -308,6 +328,7 @@ export default function TestCaseGenerator({ onTestCasesGenerated }) {
         <FooterActions
           onExport={handleExport}
           onExportExcel={handleExportExcel}
+          onSave={handleSave}
           onTestRepository={() => toast('Test Repository - future integration (coming soon)', { icon: '🔜' })}
         />
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { FiPlay, FiRefreshCw, FiUpload } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
@@ -15,6 +15,11 @@ export default function ScriptGenerator({ generatedTestCases }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('qi-script')
+    if (saved) setGeneratedScript(saved)
+  }, [])
 
   const frameworks = [
     { id: 'Selenium', label: 'Selenium' },
@@ -91,6 +96,15 @@ export default function ScriptGenerator({ generatedTestCases }) {
   const getFileExtension = () => {
     const extMap = { Python: 'py', Java: 'java', JavaScript: 'js' }
     return extMap[language] || 'txt'
+  }
+
+  const handleSave = () => {
+    if (!generatedScript.trim()) {
+      toast.error('No script to save')
+      return
+    }
+    localStorage.setItem('qi-script', generatedScript)
+    toast.success('Saved to browser - restored after refresh')
   }
 
   const handleExport = () => {
@@ -305,6 +319,7 @@ export default function ScriptGenerator({ generatedTestCases }) {
         <FooterActions
           onExport={handleExport}
           onExportExcel={handleExportExcel}
+          onSave={handleSave}
           onTestRepository={() => toast('Test Repository - future integration (coming soon)', { icon: '🔜' })}
         />
       </div>
