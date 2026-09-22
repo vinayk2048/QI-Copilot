@@ -9,7 +9,6 @@ import {
   RiEyeOffLine,
   RiCheckLine,
   RiArrowRightLine,
-  RiSparkling2Line,
 } from 'react-icons/ri'
 import { login } from '../services/api'
 import { setToken } from '../auth'
@@ -117,11 +116,6 @@ export default function Login({ onSuccess }) {
               ))}
             </div>
           </div>
-
-          <div className="flex items-center gap-2 text-[11px] text-white/30">
-            <RiSparkling2Line className="text-sm" aria-hidden="true" />
-            <span>AI-Assisted Quality Engineering · © {new Date().getFullYear()} Praval</span>
-          </div>
         </div>
 
         <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
@@ -135,7 +129,7 @@ export default function Login({ onSuccess }) {
               </div>
             </div>
 
-            <div className="rounded-3xl bg-white p-8 sm:p-10 shadow-2xl shadow-black/40 ring-1 ring-white/10 animate-fade-in-up">
+            <div className="rounded-3xl bg-white px-8 sm:px-10 pt-10 sm:pt-12 pb-8 sm:pb-10 shadow-2xl shadow-black/40 ring-1 ring-white/10 animate-fade-in-up">
               <div className="mb-7">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#1d4ed8] to-[#0ea5e9] shadow-lg shadow-blue-300/40">
                   <RiRobot2Line className="text-white text-2xl" aria-hidden="true" />
