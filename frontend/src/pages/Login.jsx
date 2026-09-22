@@ -167,7 +167,7 @@ export default function Login({ onSuccess }) {
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="you@praval.com"
+                        placeholder="Enter your username or email"
                         autoComplete="username"
                         autoFocus
                         aria-label="Username or email"
@@ -271,10 +271,6 @@ export default function Login({ onSuccess }) {
                 <span className="text-white/20">|</span>
                 <button onClick={() => toast('Terms of Service', { icon: '📋' })} className="transition-colors hover:text-white/80">
                   Terms of Service
-                </button>
-                <span className="text-white/20">|</span>
-                <button onClick={() => toast('Reach out to support@praval.com', { icon: '📧' })} className="transition-colors hover:text-white/80">
-                  Contact Support
                 </button>
               </div>
               <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-white/60">
